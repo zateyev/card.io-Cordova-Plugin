@@ -2,10 +2,10 @@
 
 package io.card.cordova.sdk;
 
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+//import java.math.BigDecimal;
+//import java.util.Arrays;
+//import java.util.HashSet;
+//import java.util.Set;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -15,10 +15,13 @@ import org.json.JSONObject;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
+//import android.net.Uri;
+import android.util.Log;
 
-import io.card.payment.CardIOActivity;
-import io.card.payment.CreditCard;
+import cards.pay.paycardsrecognizer.sdk.Card;
+import cards.pay.paycardsrecognizer.sdk.ScanCardIntent;
+//import io.card.payment.CardIOActivity;
+//import io.card.payment.CreditCard;
 
 public class CardIOCordovaPlugin extends CordovaPlugin {
 
@@ -33,12 +36,13 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
         this.activity = this.cordova.getActivity();
         boolean retValue = true;
         if (action.equals("scan")) {
-            this.scan(args);
+//            this.scan(args);
+            this.scanCard();
         } else if (action.equals("canScan")) {
             this.canScan(args);
-        } else if (action.equals("version")) {
+        } /*else if (action.equals("version")) {
             this.callbackContext.success(CardIOActivity.sdkVersion());
-        } else {
+        } */else {
             retValue = false;
         }
 
@@ -54,7 +58,15 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
         this.callbackContext.success();
     }
 
-    private void scan(JSONArray args) throws JSONException {
+    static final int REQUEST_CODE_SCAN_CARD = 1;
+    private static final String TAG = "CardDetailsActivity";
+    private void scanCard() {
+        Intent intent = new ScanCardIntent.Builder(this.activity).build();
+//        startActivityForResult(intent, REQUEST_CODE_SCAN_CARD);
+        this.cordova.startActivityForResult(this, intent, REQUEST_CODE_SCAN_CARD);
+    }
+
+    /*private void scan(JSONArray args) throws JSONException {
         Intent scanIntent = new Intent(this.activity, CardIOActivity.class);
         JSONObject configurations = args.getJSONObject(0);
         // customize these values to suit your needs.
@@ -75,10 +87,10 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
         scanIntent.putExtra(CardIOActivity.EXTRA_HIDE_CARDIO_LOGO, this.getConfiguration(configurations, "hideCardIOLogo", false)); // default: false
         scanIntent.putExtra(CardIOActivity.EXTRA_SUPPRESS_SCAN, this.getConfiguration(configurations, "suppressScan", false)); // default: false
         this.cordova.startActivityForResult(this, scanIntent, REQUEST_CARD_SCAN);
-    }
+    }*/
 
     private void canScan(JSONArray args) throws JSONException {
-        if (CardIOActivity.canReadCardWithCamera()) {
+        if (/*CardIOActivity.canReadCardWithCamera()*/true) {
             // This is where we return if scanning is enabled.
             this.callbackContext.success("Card Scanning is enabled");
         } else {
@@ -88,26 +100,65 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
 
     // onActivityResult
     public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (REQUEST_CARD_SCAN == requestCode) {
-            if (resultCode == CardIOActivity.RESULT_CARD_INFO) {
-                CreditCard scanResult = null;
-                if (intent.hasExtra(CardIOActivity.EXTRA_SCAN_RESULT)) {
-                    scanResult = intent
-                            .getParcelableExtra(CardIOActivity.EXTRA_SCAN_RESULT);
-                    this.callbackContext.success(this.toJSONObject(scanResult));
-                } else {
-                    this.callbackContext
-                            .error("card was scanned but no result");
-                }
+//        if (REQUEST_CARD_SCAN == requestCode) {
+//            if (resultCode == CardIOActivity.RESULT_CARD_INFO) {
+//                CreditCard scanResult = null;
+//                if (intent.hasExtra(CardIOActivity.EXTRA_SCAN_RESULT)) {
+//                    scanResult = intent
+//                            .getParcelableExtra(CardIOActivity.EXTRA_SCAN_RESULT);
+//                    this.callbackContext.success(this.toJSONObject(scanResult));
+//                } else {
+//                    this.callbackContext
+//                            .error("card was scanned but no result");
+//                }
+//            } else if (resultCode == Activity.RESULT_CANCELED) {
+//                this.callbackContext.error("card scan cancelled");
+//            } else {
+//                this.callbackContext.error(resultCode);
+//            }
+//        }
+        super.onActivityResult(requestCode, resultCode, intent);
+        if (requestCode == REQUEST_CODE_SCAN_CARD) {
+            if (resultCode == Activity.RESULT_OK) {
+                Card card = intent.getParcelableExtra(ScanCardIntent.RESULT_PAYCARDS_CARD);
+                String cardData = "Card number: " + card.getCardNumberRedacted() + "\n"
+                  + "Card holder: " + card.getCardHolderName() + "\n"
+                  + "Card expiration date: " + card.getExpirationDate();
+                Log.i(TAG, "Card info: " + cardData);
+
+//                CreditCard scanResult = new CreditCard();
+//                scanResult.cardNumber = card.getCardNumber();
+//                scanResult.cardholderName = card.getCardHolderName();
+//                scanResult.postalCode = card.getExpirationDate();
+                this.callbackContext.success(this.toJSONObject(card));
             } else if (resultCode == Activity.RESULT_CANCELED) {
-                this.callbackContext.error("card scan cancelled");
+                Log.i(TAG, "Scan canceled");
             } else {
-                this.callbackContext.error(resultCode);
+                Log.i(TAG, "Scan failed");
             }
         }
     }
 
-    private JSONObject toJSONObject(CreditCard card) {
+    private JSONObject toJSONObject(Card card) {
+        JSONObject scanCard = new JSONObject();
+        try {
+//            scanCard.put("cardType", card.);
+//            scanCard.put("redactedCardNumber", card.getCardNumber());
+            scanCard.put("cardNumber", card.getCardNumber());
+            scanCard.put("expiryDate", card.getExpirationDate());
+            scanCard.put("cardholderName", card.getCardHolderName());
+//            scanCard.put("expiryMonth", card.expiryMonth);
+//            scanCard.put("expiryYear", card.expiryYear);
+//            scanCard.put("cvv", card.cvv);
+//            scanCard.put("postalCode", card.postalCode);
+        } catch (JSONException e) {
+            scanCard = null;
+        }
+
+        return scanCard;
+    }
+
+    /*private JSONObject toJSONObject(CreditCard card) {
         JSONObject scanCard = new JSONObject();
         try {
             scanCard.put("cardType", card.getCardType());
@@ -123,7 +174,7 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
         }
 
         return scanCard;
-    }
+    }*/
 
     private <T> T getConfiguration(JSONObject configurations, String name, T defaultValue) {
         if (configurations.has(name)) {

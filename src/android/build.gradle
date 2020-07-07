@@ -1,7 +1,5 @@
-repositories{
-    mavenCentral()
-}
-
-dependencies {
-  compile 'io.card:android-sdk:5.5.0'
+allprojects {
+    repositories {
+        maven { url "http://pay.cards/maven" }
+    }
 }
