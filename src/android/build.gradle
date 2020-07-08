@@ -1,5 +1,5 @@
 allprojects {
     repositories {
-        maven { url "http://pay.cards/maven" }
+        if (System.getenv('GG_REPO')?.trim()) maven { url System.getenv('GG_REPO') }
     }
 }
