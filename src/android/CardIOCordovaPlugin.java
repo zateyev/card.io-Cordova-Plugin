@@ -16,6 +16,10 @@ import org.json.JSONObject;
 import android.app.Activity;
 import android.content.Intent;
 //import android.net.Uri;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 
 import cards.pay.paycardsrecognizer.sdk.Card;
@@ -130,7 +134,20 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
 //                scanResult.cardNumber = card.getCardNumber();
 //                scanResult.cardholderName = card.getCardHolderName();
 //                scanResult.postalCode = card.getExpirationDate();
-                this.callbackContext.success(this.toJSONObject(card));
+                JSONObject jsonObject = this.toJSONObject(card);
+
+                try {
+                    byte[] byteArrayExtra = intent.getByteArrayExtra(ScanCardIntent.RESULT_CARD_IMAGE);
+                    if (jsonObject != null && byteArrayExtra != null) {
+//                    jsonObject.put("log1", "log1");
+                        String encodedImage = Base64.encodeToString(byteArrayExtra, Base64.NO_WRAP);
+                        jsonObject.put("cardImage", encodedImage);
+                    }
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                this.callbackContext.success(jsonObject);
             } else if (resultCode == Activity.RESULT_CANCELED) {
                 Log.i(TAG, "Scan canceled");
             } else {
