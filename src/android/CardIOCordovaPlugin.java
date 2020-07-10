@@ -65,7 +65,7 @@ public class CardIOCordovaPlugin extends CordovaPlugin {
     static final int REQUEST_CODE_SCAN_CARD = 1;
     private static final String TAG = "CardDetailsActivity";
     private void scanCard() {
-        Intent intent = new ScanCardIntent.Builder(this.activity).build();
+        Intent intent = new ScanCardIntent.Builder(this.activity).setSaveCard(true).build();
 //        startActivityForResult(intent, REQUEST_CODE_SCAN_CARD);
         this.cordova.startActivityForResult(this, intent, REQUEST_CODE_SCAN_CARD);
     }
